@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String // hashed
+  name      String
+  phone     String?
+  posts     Post[]
+  comments  Comment[]
+  reactions Reaction[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  roleId    Int
+
+  role Role @relation(fields: [roleId], references: [id])
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String   @unique
+
+  User User[]
+}
+
+// model RolePermission {
+//   roleId Int
+//   role   Role @relation(fields: [roleId], references: [id])
+
+//   permissionId Int
+//   permission   Permission @relation(fields: [permissionId], references: [id])
+
+//   @@id([roleId, permissionId])
+// }
+
+enum PostType {
+  LOST
+  FOUND
+}
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String
+  type        PostType // LOST or FOUND (current status)
+  creatorId   Int
+  creator     User       @relation(fields: [creatorId], references: [id])
+  comments    Comment[]
+  reactions   Reaction[]
+  deletedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  postId    Int
+  post      Post      @relation(fields: [postId], references: [id])
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id])
+  parentId  Int?
+  parent    Comment?  @relation("CommentToReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentToReplies")
+  depth     Int       @default(3)
+  content   String
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum ReactionType {
+  LIKE
+  SAD
+}
+
+model Reaction {
+  id        Int          @id @default(autoincrement())
+  type      ReactionType @default(LIKE)
+  postId    Int
+  post      Post         @relation(fields: [postId], references: [id])
+  userId    Int
+  user      User         @relation(fields: [userId], references: [id])
+  createdAt DateTime     @default(now())
+
+  @@unique([postId, userId]) // Compound unique constraint
+  @@index([postId])
+  @@index([userId])
+}

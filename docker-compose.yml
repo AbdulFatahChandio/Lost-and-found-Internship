@@ -1,0 +1,47 @@
+version: '3.9'
+services:
+  dev:
+    container_name: ${DOCKER_DEVELOPMENT_CONTAINER_NAME}
+    build:
+      context: .
+      target: development
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./src:/app/dev/src
+      - /app/node_modules
+    networks:
+      - app-network
+    command: pnpm run start:dev
+
+  stag:
+    container_name: ${DOCKER_STAGING_CONTAINER_NAME}
+    build:
+      context: .
+      target: staging
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./src:/app/stag/src
+      - /app/node_modules
+    networks:
+      - app-network
+    command: pnpm run start:stag
+
+  prod:
+    container_name: ${DOCKER_PRODUCTION_CONTAINER_NAME}
+    build:
+      context: .
+      target: production
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./src:/app/prod/src
+      - /app/node_modules
+    networks:
+      - app-network
+    command: pnpm run start:prod
+
+networks:
+  app-network:
+    driver: bridge
