@@ -1,5 +1,21 @@
 version: '3.9'
 services:
+  redis:
+    container_name: ${REDIS_CONTAINER_NAME:-redis-lost-and-found}
+    image: redis:7-alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    networks:
+      - app-network
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   dev:
     container_name: ${DOCKER_DEVELOPMENT_CONTAINER_NAME}
     build:
@@ -12,7 +28,32 @@ services:
       - /app/node_modules
     networks:
       - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     command: pnpm run start:dev
+
+  worker:
+    container_name: ${DOCKER_WORKER_CONTAINER_NAME:-lost-and-found-worker}
+    build:
+      context: .
+      target: development
+    volumes:
+      - ./src:/app/dev/src
+      - /app/node_modules
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATABASE_URL: ${DATABASE_URL}
+    command: pnpm run start:worker
 
   stag:
     container_name: ${DOCKER_STAGING_CONTAINER_NAME}
@@ -45,3 +86,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  redis-data:

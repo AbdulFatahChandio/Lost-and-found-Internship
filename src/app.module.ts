@@ -5,7 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PostModule } from './modules/post/post.module';
 import { CommentModule } from './modules/comments/comments.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
-// import { PostModule } from './modules/post/post.module';
+import { MatchingModule } from './modules/matching/matching.module';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { ReactionModule } from './modules/reaction/reaction.module';
     PostModule,
     CommentModule,
     ReactionModule,
-
+    MatchingModule,
   ],
   controllers: [],
   providers: [],

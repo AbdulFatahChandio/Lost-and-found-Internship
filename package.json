@@ -10,6 +10,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "npx prisma migrate dev && nest start --watch",
+    "start:worker": "npx prisma generate && ts-node -r tsconfig-paths/register src/worker.main.ts",
+    "start:worker:prod": "node dist/src/worker.main.js",
     "start:stag": "npx prisma migrate deploy && npx prisma generate && nest start",
     "start:prod": "npx prisma migrate deploy && npx prisma generate && nest start",
     "start:debug": "nest start --debug --watch",

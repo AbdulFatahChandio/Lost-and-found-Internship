@@ -54,17 +54,44 @@ enum PostType {
 }
 
 model Post {
-  id          Int        @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   title       String
   description String
   type        PostType // LOST or FOUND (current status)
   creatorId   Int
-  creator     User       @relation(fields: [creatorId], references: [id])
+  creator     User        @relation(fields: [creatorId], references: [id])
   comments    Comment[]
   reactions   Reaction[]
+  lostMatches  ItemMatch[] @relation("LostPostMatches")
+  foundMatches ItemMatch[] @relation("FoundPostMatches")
   deletedAt   DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum MatchStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  CONFIRMED
+}
+
+model ItemMatch {
+  id          Int         @id @default(autoincrement())
+  lostPostId  Int
+  foundPostId Int
+  score       Float
+  status      MatchStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  lostPost  Post @relation("LostPostMatches", fields: [lostPostId], references: [id], onDelete: Cascade)
+  foundPost Post @relation("FoundPostMatches", fields: [foundPostId], references: [id], onDelete: Cascade)
+
+  @@unique([lostPostId, foundPostId])
+  @@index([lostPostId])
+  @@index([foundPostId])
+  @@index([score])
 }
 
 model Comment {

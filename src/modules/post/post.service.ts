@@ -5,20 +5,21 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import { QueryPostsDto } from './dto/query.dto';
+import { MatchingService } from '../matching/matching.service';
 
 
 @Injectable()
 export class PostsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly matchingService: MatchingService,
+    ) { }
 
     // CREATE
     async create(dto: CreatePostDto, currentUser: User) {
-        console.log("🚀 ~ PostsService ~ create ~ dto:", dto)
-
         const existingUser = await this.prisma.user.findUnique({
             where: { id: currentUser.id },
         });
-        console.log("🚀 ~ PostsService ~ create ~ existingUser:", existingUser)
 
         if (!existingUser) {
             throw new NotFoundException('User not found');
@@ -31,6 +32,10 @@ export class PostsService {
                 creatorId: existingUser.id
             },
         });
+
+        if (post.type === PostType.LOST) {
+            await this.matchingService.enqueueLostItemMatch(post.id);
+        }
 
         return post;
     }
@@ -120,7 +125,6 @@ export class PostsService {
         const existingUser = await this.prisma.user.findUnique({
             where: { id: currentUser.id },
         });
-        console.log("🚀 ~ PostsService ~ create ~ existingUser:", existingUser)
 
         const existing = await this.prisma.post.findFirst({
             where: { id, deletedAt: null },

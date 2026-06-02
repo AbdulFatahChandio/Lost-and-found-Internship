@@ -85,6 +85,8 @@ Users can create posts for lost or found items, comment on posts, and react to t
 - Create **Lost** or **Found** posts
 - Nested comments (replies to comments)
 - Post reactions (Like / Sad)
+- **Background item matching** (Redis + BullMQ) — LOST posts are matched against FOUND posts in parallel worker processes
+- View and manage potential matches via `/api/v1/matches`
 - Soft delete support
 - Prisma ORM with PostgreSQL
 - Clean relational schema
@@ -94,9 +96,13 @@ Users can create posts for lost or found items, comment on posts, and react to t
 # 🛠 Tech Stack
 
 - Node.js
+- NestJS
 - Prisma ORM
 - PostgreSQL
+- Redis + BullMQ (background job queue)
 - TypeScript / JavaScript
+
+See **[MATCHING_SETUP.md](MATCHING_SETUP.md)** for parallel matching worker setup.
 
 ---
 
@@ -208,6 +214,27 @@ Constraints:
 
 - One reaction per user per post
 
+---
+
+## ItemMatch
+
+Stores potential matches between LOST and FOUND posts (background worker).
+
+| Field       | Type         |
+| ----------- | ------------ |
+| id          | Int          |
+| lostPostId  | Int          |
+| foundPostId | Int          |
+| score       | Float        |
+| status      | MatchStatus  |
+| createdAt   | DateTime     |
+| updatedAt   | DateTime     |
+
+Constraints:
+
+- Unique pair `(lostPostId, foundPostId)`
+- Status: PENDING, REVIEWED, DISMISSED, CONFIRMED
+
 # 🧾 Example Environment File
 
 Create a `.env` file in the root of the project and add the following configuration.
@@ -255,6 +282,15 @@ PG_ADMIN_EMAIL=admin@example.com
 PG_ADMIN_PASSWORD=adminpassword
 PG_ADMIN_PORT=5058
 PG_ADMIN_EXPOSE_PORT=80
+
+# --------------------------------
+# REDIS (BullMQ matching queue)
+# --------------------------------
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_CONTAINER_NAME=redis-lost-and-found
+DOCKER_WORKER_CONTAINER_NAME=lost-and-found-worker
 
 # --------------------------------
 # DOCKER CONTAINERS
